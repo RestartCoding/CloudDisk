@@ -10,6 +10,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -61,5 +62,10 @@ public class FileController {
   public String createFolder(@RequestBody CreateFolderDTO createFolderDTO) throws IOException {
     return String.valueOf(
         fileService.createFolder(createFolderDTO.getParentId(), createFolderDTO.getFileName()));
+  }
+
+  @DeleteMapping
+  public void deleteFile(@RequestParam Long fileId) throws IOException {
+    fileService.removeFile(fileId);
   }
 }

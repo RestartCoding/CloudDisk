@@ -104,4 +104,29 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
 
     return fileInfo.getFileId();
   }
+
+  @Transactional(rollbackFor = Exception.class)
+  @Override
+  public void removeFile(Long fileId) throws IOException {
+
+    // 不能删除根目录
+    if (fileId == 1) {
+      throw new RuntimeException("You can not delete root directory.");
+    }
+    FileInfo fileInfo = getById(fileId);
+    // 删除j记录
+    removeById(fileId);
+
+    if (fileInfo.getIsFolder() == 1) {
+      // 删除直接子目录的记录。直接子目录的记录删除之后，其他记录也找不到它们了。可以暂时先不删
+      remove(new LambdaQueryWrapper<FileInfo>().eq(FileInfo::getParentId, fileId));
+      File file = new File(fileInfo.getFilePath());
+      File[] files = file.listFiles();
+      if (files != null && files.length > 0){
+        throw new RuntimeException("Directory is not empty.");
+      }
+    }
+    // 删除文件
+    Files.delete(Paths.get(fileInfo.getFilePath()));
+  }
 }

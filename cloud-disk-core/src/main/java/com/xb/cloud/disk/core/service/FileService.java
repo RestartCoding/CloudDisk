@@ -44,4 +44,11 @@ public interface FileService extends IService<FileInfo> {
    * @return fileId
    */
   Long createFolder(Long parentId, String folderName) throws IOException;
+
+  /**
+   * 删除文件
+   *
+   * @param fileId fileId
+   */
+  void removeFile(Long fileId) throws IOException;
 }
