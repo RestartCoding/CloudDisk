@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -40,25 +41,15 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
       logger.error("Upload file failed. Parent file is not a folder.");
       throw new RuntimeException("Upload file failed. Parent file is not a folder.");
     }
-    String filePath = parentFileInfo.getFilePath() + File.separator + fileInfo.getFileName();
-    File file = new File(filePath);
-    if (file.exists()) {
-      logger.error("File has been existed exists: {}", fileInfo);
-      throw new RuntimeException("File has been existed.");
-    }
-
     byte[] bytes = inputStream.readAllBytes();
+    String filePath = storage(bytes);
 
     fileInfo.setFilePath(filePath);
-    fileInfo.setIsFolder(0);
-    // 保存到磁盘
     fileInfo.setFileSize((long) bytes.length);
-    FileOutputStream fileOutputStream = new FileOutputStream(file);
+    fileInfo.setIsFolder(0);
 
     // 保存数据库
     save(fileInfo);
-    fileOutputStream.write(bytes);
-    fileOutputStream.flush();
     return fileInfo.getFileId();
   }
 
@@ -87,7 +78,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
       throw new RuntimeException("Parent file is not a folder.");
     }
 
-    String filePath = parentFileInfo.getFilePath() + File.separator + folderName;
+    String filePath = getFilePath();
     if (new File(filePath).exists()) {
       throw new RuntimeException("Folder has been existed.");
     }
@@ -122,11 +113,43 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
       remove(new LambdaQueryWrapper<FileInfo>().eq(FileInfo::getParentId, fileId));
       File file = new File(fileInfo.getFilePath());
       File[] files = file.listFiles();
-      if (files != null && files.length > 0){
+      if (files != null && files.length > 0) {
         throw new RuntimeException("Directory is not empty.");
       }
     }
     // 删除文件
     Files.delete(Paths.get(fileInfo.getFilePath()));
+  }
+
+  @Override
+  public void moveFile(List<Long> srcFileIds, Long dstFileId) {
+    if (srcFileIds.contains(1L)){
+      throw new RuntimeException("You can not move root directory.");
+    }
+    List<FileInfo> srcFiles = listByIds(srcFileIds);
+    FileInfo dstFile = getById(dstFileId);
+    if (dstFile.getIsFolder() != 1) {
+      throw new RuntimeException("Dst file is not a folder.");
+    }
+    srcFiles.forEach(e -> e.setParentId(dstFileId));
+    updateBatchById(srcFiles);
+  }
+
+  private String getFilePath() {
+    return getById(1).getFilePath() + File.separator + UUID.randomUUID().toString();
+  }
+
+  /**
+   * 存储文件
+   *
+   * @param bytes bytes
+   * @return 文件路径
+   */
+  private String storage(byte[] bytes) throws IOException {
+    String filePath = getFilePath();
+    try (FileOutputStream fileOutputStream = new FileOutputStream(filePath)) {
+      fileOutputStream.write(bytes);
+    }
+    return filePath;
   }
 }

@@ -3,6 +3,7 @@ package com.xb.cloud.disk.web.controller;
 import com.xb.cloud.disk.core.entity.FileInfo;
 import com.xb.cloud.disk.core.service.FileService;
 import dto.CreateFolderDTO;
+import dto.MoveFileDTO;
 import dto.UploadFileDTO;
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,5 +68,10 @@ public class FileController {
   @DeleteMapping
   public void deleteFile(@RequestParam Long fileId) throws IOException {
     fileService.removeFile(fileId);
+  }
+
+  @PostMapping("/move")
+  public void moveFile(@RequestBody MoveFileDTO moveFileDTO) throws IOException {
+    fileService.moveFile(moveFileDTO.getSrcFileIds(), moveFileDTO.getTargetFileId());
   }
 }

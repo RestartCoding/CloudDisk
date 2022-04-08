@@ -49,6 +49,15 @@ public interface FileService extends IService<FileInfo> {
    * 删除文件
    *
    * @param fileId fileId
+   * @throws IOException 删除文件异常
    */
   void removeFile(Long fileId) throws IOException;
+
+  /**
+   * 移动文件
+   *
+   * @param srcFileIds srcFileIds
+   * @param dstFileId dstFileId
+   */
+  void moveFile(List<Long> srcFileIds, Long dstFileId) throws IOException;
 }
