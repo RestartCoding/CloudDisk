@@ -5,6 +5,7 @@ import com.xb.cloud.disk.core.service.FileService;
 import dto.CreateFolderDTO;
 import dto.UploadFileDTO;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
@@ -45,7 +46,9 @@ public class FileController {
   @GetMapping("/download")
   public void download(@RequestParam String fileId, HttpServletResponse response)
       throws IOException {
-    response.getOutputStream().write(fileService.download(fileId).readAllBytes());
+    InputStream inputStream = fileService.download(fileId);
+    response.getOutputStream().write(inputStream.readAllBytes());
+    inputStream.close();
   }
 
   /** 文件列表 */

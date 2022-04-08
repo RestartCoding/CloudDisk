@@ -5,4 +5,4 @@ spring:
     password: 123456
     driver-class-name: com.mysql.jdbc.Driver
 file:
-  rootDirectory: "d:\root"
+  rootDirectory: "d:\\root"
