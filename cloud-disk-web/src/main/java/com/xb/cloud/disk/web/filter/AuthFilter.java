@@ -46,8 +46,7 @@ public class AuthFilter implements Filter {
     }
   }
 
-  private void sendUnauthorizedResponse(HttpServletResponse response){
-    response.setStatus(401);
-    response.setContentType("Unauthorized");
+  private void sendUnauthorizedResponse(HttpServletResponse response) throws IOException {
+    response.sendError(401, "Unauthorized");
   }
 }
