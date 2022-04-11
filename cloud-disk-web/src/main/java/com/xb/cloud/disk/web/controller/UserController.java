@@ -2,6 +2,7 @@ package com.xb.cloud.disk.web.controller;
 
 import com.xb.cloud.disk.core.entity.User;
 import com.xb.cloud.disk.core.service.UserService;
+import dto.user.LoginDTO;
 import dto.user.RegisterByEmailDTO;
 import dto.user.RegisterByPhoneDTO;
 import lombok.AllArgsConstructor;
@@ -40,5 +41,10 @@ public class UserController {
     user.setPhone(registerByEmailDTO.getEmail());
 
     userService.register(user, registerByEmailDTO.getEmail(), registerByEmailDTO.getVerifyCode());
+  }
+
+  @PostMapping("/login")
+  public String login(@RequestBody @Validated LoginDTO loginDTO) {
+    return userService.login(loginDTO.getUsername(), loginDTO.getPassword());
   }
 }

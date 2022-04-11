@@ -17,4 +17,13 @@ public interface UserService extends IService<User> {
    * @param verifyCode verifyCode
    */
   void register(User user, String principle, String verifyCode);
+
+  /**
+   * 登录
+   *
+   * @param username username
+   * @param password password
+   * @return username token
+   */
+  String login(String username, String password);
 }
