@@ -1,6 +1,8 @@
 package com.xb.cloud.disk.core.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import java.util.Date;
 import lombok.Data;
 
 /**
@@ -10,9 +12,19 @@ import lombok.Data;
 @Data
 public class Share {
 
-  @TableId private String shareId;
+  @TableId(type = IdType.AUTO)
+  private Long shareId;
 
+  /** 分享人 */
   private String shareUser;
 
-  private String shareFileInfoIds;
+  /** 提取码 */
+  private String extractCode;
+
+  /** 过期时间 */
+  private Date expiredTime;
+
+  private Date createTime;
+
+  private Date updateTime;
 }

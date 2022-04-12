@@ -2,6 +2,7 @@ package com.xb.cloud.disk.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xb.cloud.disk.common.constant.SysConstant;
 import com.xb.cloud.disk.core.ThreadToken;
 import com.xb.cloud.disk.core.TokenManager;
 import com.xb.cloud.disk.core.entity.FileInfo;
@@ -47,7 +48,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
       throw new RuntimeException("Parent file must be a folder.");
     }
 
-    if (fileInfo.getParentId() != 1
+    if (fileInfo.getParentId() != SysConstant.ROOT_DIR_ID
         && !parentFileInfo.getOwner().equals(tokenManager.load(ThreadToken.get()).getUsername())) {
       throw new RuntimeException("Can not upload file to other people's folder.");
     }
@@ -103,7 +104,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
       throw new RuntimeException("Parent file is not a folder.");
     }
 
-    if (parentFileInfo.getFileId() != 1
+    if (parentFileInfo.getFileId() != SysConstant.ROOT_DIR_ID
         && !parentFileInfo.getOwner().equals(tokenManager.load(ThreadToken.get()).getUsername())) {
       throw new RuntimeException("Can not create a folder in other people's folder.");
     }
@@ -132,7 +133,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
   public void removeFile(Long fileId) throws IOException {
 
     // 不能删除根目录
-    if (fileId == 1) {
+    if (fileId == SysConstant.ROOT_DIR_ID) {
       throw new RuntimeException("You can not delete root directory.");
     }
     FileInfo fileInfo = getById(fileId);
@@ -164,7 +165,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
   @Override
   public void moveFile(List<Long> srcFileIds, Long dstFileId) {
 
-    if (srcFileIds.contains(1L)) {
+    if (srcFileIds.contains(SysConstant.ROOT_DIR_ID)) {
       throw new RuntimeException("You can not move root directory.");
     }
     List<FileInfo> srcFiles = listByIds(srcFileIds);
@@ -181,7 +182,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
       throw new RuntimeException("Can not move other people's file.");
     }
 
-    if (dstFile.getFileId() != 1 && !dstFile.getOwner().equals(username)) {
+    if (dstFile.getFileId() != SysConstant.ROOT_DIR_ID && !dstFile.getOwner().equals(username)) {
       throw new RuntimeException("Can not move files to other people's folder");
     }
 
@@ -190,7 +191,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
   }
 
   private String getFilePath() {
-    return getById(1).getFilePath() + File.separator + UUID.randomUUID().toString();
+    return getById(SysConstant.ROOT_DIR_ID).getFilePath() + File.separator + UUID.randomUUID().toString();
   }
 
   /**
