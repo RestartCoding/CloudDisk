@@ -38,7 +38,7 @@ public class UserController {
     User user = new User();
     user.setUsername(registerByEmailDTO.getUsername());
     user.setPassword(registerByEmailDTO.getPassword());
-    user.setPhone(registerByEmailDTO.getEmail());
+    user.setEmail(registerByEmailDTO.getEmail());
 
     userService.register(user, registerByEmailDTO.getEmail(), registerByEmailDTO.getVerifyCode());
   }

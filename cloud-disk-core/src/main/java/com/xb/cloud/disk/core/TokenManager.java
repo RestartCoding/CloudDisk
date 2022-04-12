@@ -1,7 +1,6 @@
 package com.xb.cloud.disk.core;
 
 import com.xb.cloud.disk.core.entity.User;
-import org.springframework.lang.Nullable;
 
 /**
  * @author xiabiao
@@ -14,9 +13,9 @@ public interface TokenManager {
    *
    * @param token token
    * @return user. maybe null.
+   * @throws RuntimeException token not found.
    */
-  @Nullable
-  User load(String token);
+  User load(String token) throws RuntimeException;
 
   /**
    * store token

@@ -2,6 +2,8 @@ package com.xb.cloud.disk.core.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.xb.cloud.disk.core.ThreadToken;
+import com.xb.cloud.disk.core.TokenManager;
 import com.xb.cloud.disk.core.entity.FileInfo;
 import com.xb.cloud.disk.core.mapper.FileMapper;
 import com.xb.cloud.disk.core.service.FileService;
@@ -15,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.UUID;
+import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,8 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
 
   private static final Logger logger = LoggerFactory.getLogger(FileServiceImpl.class);
 
+  @Resource private TokenManager tokenManager;
+
   @Transactional(rollbackFor = Exception.class)
   @Override
   public Object upload(FileInfo fileInfo, InputStream inputStream) throws IOException {
@@ -37,6 +42,16 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
       logger.error("Parent file is not found.");
       throw new RuntimeException("Parent file is not found.");
     }
+
+    if (parentFileInfo.getIsFolder() != 1) {
+      throw new RuntimeException("Parent file must be a folder.");
+    }
+
+    if (fileInfo.getParentId() != 1
+        && !parentFileInfo.getOwner().equals(tokenManager.load(ThreadToken.get()).getUsername())) {
+      throw new RuntimeException("Can not upload file to other people's folder.");
+    }
+
     if (parentFileInfo.getIsFolder() != 1) {
       logger.error("Upload file failed. Parent file is not a folder.");
       throw new RuntimeException("Upload file failed. Parent file is not a folder.");
@@ -47,6 +62,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
     fileInfo.setFilePath(filePath);
     fileInfo.setFileSize((long) bytes.length);
     fileInfo.setIsFolder(0);
+    fileInfo.setOwner(tokenManager.load(ThreadToken.get()).getUsername());
 
     // 保存数据库
     save(fileInfo);
@@ -56,16 +72,25 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
   @Override
   public InputStream download(String fileId) throws FileNotFoundException {
     FileInfo fileInfo = getById(fileId);
+
     if (fileInfo == null) {
       logger.error("Download file failed. File is not found.");
       throw new RuntimeException("File not found.");
     }
+
+    if (!fileInfo.getOwner().equals(tokenManager.load(ThreadToken.get()).getUsername())) {
+      throw new RuntimeException("unauthorized");
+    }
+
     return new FileInputStream(fileInfo.getFilePath());
   }
 
   @Override
   public List<FileInfo> listFile(String parentFileId) {
-    return list(new LambdaQueryWrapper<FileInfo>().eq(FileInfo::getParentId, parentFileId));
+    return list(
+        new LambdaQueryWrapper<FileInfo>()
+            .eq(FileInfo::getParentId, parentFileId)
+            .eq(FileInfo::getOwner, tokenManager.load(ThreadToken.get()).getUsername()));
   }
 
   @Override
@@ -78,6 +103,11 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
       throw new RuntimeException("Parent file is not a folder.");
     }
 
+    if (parentFileInfo.getFileId() != 1
+        && !parentFileInfo.getOwner().equals(tokenManager.load(ThreadToken.get()).getUsername())) {
+      throw new RuntimeException("Can not create a folder in other people's folder.");
+    }
+
     String filePath = getFilePath();
     if (new File(filePath).exists()) {
       throw new RuntimeException("Folder has been existed.");
@@ -88,6 +118,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
     fileInfo.setFilePath(filePath);
     fileInfo.setFileName(folderName);
     fileInfo.setIsFolder(1);
+    fileInfo.setOwner(tokenManager.load(ThreadToken.get()).getUsername());
     save(fileInfo);
 
     // 创建文件夹
@@ -105,6 +136,15 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
       throw new RuntimeException("You can not delete root directory.");
     }
     FileInfo fileInfo = getById(fileId);
+
+    if (fileInfo == null) {
+      throw new RuntimeException("File not found.");
+    }
+
+    if (!fileInfo.getOwner().equals(tokenManager.load(ThreadToken.get()).getUsername())) {
+      throw new RuntimeException("Can not delete other people's file.");
+    }
+
     // 删除j记录
     removeById(fileId);
 
@@ -123,14 +163,28 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
 
   @Override
   public void moveFile(List<Long> srcFileIds, Long dstFileId) {
-    if (srcFileIds.contains(1L)){
+
+    if (srcFileIds.contains(1L)) {
       throw new RuntimeException("You can not move root directory.");
     }
     List<FileInfo> srcFiles = listByIds(srcFileIds);
     FileInfo dstFile = getById(dstFileId);
+
     if (dstFile.getIsFolder() != 1) {
       throw new RuntimeException("Dst file is not a folder.");
     }
+
+    // check permission
+    String username = tokenManager.load(ThreadToken.get()).getUsername();
+    boolean hasFileOfOtherPeople = srcFiles.stream().anyMatch(f -> !f.getOwner().equals(username));
+    if (hasFileOfOtherPeople) {
+      throw new RuntimeException("Can not move other people's file.");
+    }
+
+    if (dstFile.getFileId() != 1 && !dstFile.getOwner().equals(username)) {
+      throw new RuntimeException("Can not move files to other people's folder");
+    }
+
     srcFiles.forEach(e -> e.setParentId(dstFileId));
     updateBatchById(srcFiles);
   }

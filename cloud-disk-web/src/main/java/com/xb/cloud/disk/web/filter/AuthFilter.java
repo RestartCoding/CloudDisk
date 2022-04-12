@@ -1,5 +1,6 @@
 package com.xb.cloud.disk.web.filter;
 
+import com.xb.cloud.disk.core.ThreadToken;
 import com.xb.cloud.disk.core.TokenManager;
 import java.io.IOException;
 import java.util.Set;
@@ -23,7 +24,8 @@ import org.springframework.util.StringUtils;
 @Component
 public class AuthFilter implements Filter {
 
-  private Set<String> ignorePath = Set.of("/user/login", "/user/registerByPhone", "/user/registerByEmail", "/verifyCode/send");
+  private Set<String> ignorePath =
+      Set.of("/user/login", "/user/registerByPhone", "/user/registerByEmail", "/verifyCode/send");
 
   @Resource private TokenManager tokenManager;
 
@@ -36,8 +38,9 @@ public class AuthFilter implements Filter {
     if (ignorePath.contains(uri)) {
       filterChain.doFilter(servletRequest, servletResponse);
     } else {
-      String authorization = httpServletRequest.getHeader("Authorization");
-      if (StringUtils.hasText(authorization) && tokenManager.load(authorization) != null) {
+      String token = httpServletRequest.getHeader("Authorization");
+      if (StringUtils.hasText(token) && tokenManager.load(token) != null) {
+        ThreadToken.set(token);
         filterChain.doFilter(servletRequest, servletResponse);
       } else {
         HttpServletResponse response = (HttpServletResponse) servletResponse;

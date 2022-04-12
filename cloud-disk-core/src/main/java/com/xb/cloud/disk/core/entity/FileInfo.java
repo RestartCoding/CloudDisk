@@ -28,4 +28,7 @@ public class FileInfo {
   private Date createTime;
 
   private Date updateTime;
+
+  /** 文件所属者 */
+  private String owner;
 }
