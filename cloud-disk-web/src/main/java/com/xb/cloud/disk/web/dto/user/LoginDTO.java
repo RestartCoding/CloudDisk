@@ -1,4 +1,4 @@
-package dto.user;
+package com.xb.cloud.disk.web.dto.user;
 
 import javax.validation.constraints.NotEmpty;
 import lombok.Data;

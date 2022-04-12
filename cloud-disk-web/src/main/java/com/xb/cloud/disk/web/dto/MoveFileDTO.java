@@ -1,4 +1,4 @@
-package dto;
+package com.xb.cloud.disk.web.dto;
 
 import java.util.List;
 import lombok.Data;

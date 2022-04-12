@@ -2,9 +2,9 @@ package com.xb.cloud.disk.web.controller;
 
 import com.xb.cloud.disk.core.entity.FileInfo;
 import com.xb.cloud.disk.core.service.FileService;
-import dto.CreateFolderDTO;
-import dto.MoveFileDTO;
-import dto.UploadFileDTO;
+import com.xb.cloud.disk.web.dto.CreateFolderDTO;
+import com.xb.cloud.disk.web.dto.MoveFileDTO;
+import com.xb.cloud.disk.web.dto.UploadFileDTO;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;

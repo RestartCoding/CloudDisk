@@ -2,9 +2,9 @@ package com.xb.cloud.disk.web.controller;
 
 import com.xb.cloud.disk.core.entity.User;
 import com.xb.cloud.disk.core.service.UserService;
-import dto.user.LoginDTO;
-import dto.user.RegisterByEmailDTO;
-import dto.user.RegisterByPhoneDTO;
+import com.xb.cloud.disk.web.dto.user.LoginDTO;
+import com.xb.cloud.disk.web.dto.user.RegisterByEmailDTO;
+import com.xb.cloud.disk.web.dto.user.RegisterByPhoneDTO;
 import lombok.AllArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;

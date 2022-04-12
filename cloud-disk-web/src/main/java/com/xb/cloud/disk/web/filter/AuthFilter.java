@@ -25,7 +25,7 @@ import org.springframework.util.StringUtils;
 public class AuthFilter implements Filter {
 
   private Set<String> ignorePath =
-      Set.of("/user/login", "/user/registerByPhone", "/user/registerByEmail", "/verifyCode/send");
+      Set.of("/user/login", "/user/registerByPhone", "/user/registerByEmail", "/verifyCode/send", "/index.html", "/favicon.ico");
 
   @Resource private TokenManager tokenManager;
 
