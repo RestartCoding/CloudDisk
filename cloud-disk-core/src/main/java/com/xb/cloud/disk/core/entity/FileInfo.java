@@ -21,7 +21,7 @@ public class FileInfo {
 
   private Long fileSize;
 
-  private Integer isFolder;
+  private Boolean isFolder;
 
   private Long parentId;
 

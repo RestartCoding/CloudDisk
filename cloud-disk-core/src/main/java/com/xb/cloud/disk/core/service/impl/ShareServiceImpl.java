@@ -111,7 +111,7 @@ public class ShareServiceImpl extends ServiceImpl<ShareMapper, Share> implements
       logger.error("target file not found.");
       throw new RuntimeException("target file not found.");
     }
-    if (targetFile.getIsFolder() != 1) {
+    if (!targetFile.getIsFolder()) {
       logger.error("target file is not a folder.");
       throw new RuntimeException("target file is not a folder.");
     }

@@ -44,7 +44,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
       throw new RuntimeException("Parent file is not found.");
     }
 
-    if (parentFileInfo.getIsFolder() != 1) {
+    if (!parentFileInfo.getIsFolder()) {
       throw new RuntimeException("Parent file must be a folder.");
     }
 
@@ -53,7 +53,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
       throw new RuntimeException("Can not upload file to other people's folder.");
     }
 
-    if (parentFileInfo.getIsFolder() != 1) {
+    if (!parentFileInfo.getIsFolder()) {
       logger.error("Upload file failed. Parent file is not a folder.");
       throw new RuntimeException("Upload file failed. Parent file is not a folder.");
     }
@@ -62,7 +62,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
 
     fileInfo.setFilePath(filePath);
     fileInfo.setFileSize((long) bytes.length);
-    fileInfo.setIsFolder(0);
+    fileInfo.setIsFolder(false);
     fileInfo.setOwner(tokenManager.load(ThreadToken.get()).getUsername());
 
     // 保存数据库
@@ -100,7 +100,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
     if (parentFileInfo == null) {
       throw new RuntimeException("Parent file not found.");
     }
-    if (parentFileInfo.getIsFolder() != 1) {
+    if (!parentFileInfo.getIsFolder()) {
       throw new RuntimeException("Parent file is not a folder.");
     }
 
@@ -118,7 +118,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
     fileInfo.setParentId(parentId);
     fileInfo.setFilePath(filePath);
     fileInfo.setFileName(folderName);
-    fileInfo.setIsFolder(1);
+    fileInfo.setIsFolder(true);
     fileInfo.setOwner(tokenManager.load(ThreadToken.get()).getUsername());
     save(fileInfo);
 
@@ -149,7 +149,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
     // 删除j记录
     removeById(fileId);
 
-    if (fileInfo.getIsFolder() == 1) {
+    if (fileInfo.getIsFolder()) {
       // 删除直接子目录的记录。直接子目录的记录删除之后，其他记录也找不到它们了。可以暂时先不删
       remove(new LambdaQueryWrapper<FileInfo>().eq(FileInfo::getParentId, fileId));
       File file = new File(fileInfo.getFilePath());
@@ -171,7 +171,7 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
     List<FileInfo> srcFiles = listByIds(srcFileIds);
     FileInfo dstFile = getById(dstFileId);
 
-    if (dstFile.getIsFolder() != 1) {
+    if (dstFile.getIsFolder()) {
       throw new RuntimeException("Dst file is not a folder.");
     }
 
@@ -191,7 +191,9 @@ public class FileServiceImpl extends ServiceImpl<FileMapper, FileInfo> implement
   }
 
   private String getFilePath() {
-    return getById(SysConstant.ROOT_DIR_ID).getFilePath() + File.separator + UUID.randomUUID().toString();
+    return getById(SysConstant.ROOT_DIR_ID).getFilePath()
+        + File.separator
+        + UUID.randomUUID().toString();
   }
 
   /**

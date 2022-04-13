@@ -45,7 +45,7 @@ public class InitRootDirectory implements ApplicationRunner {
     fileInfo.setFileId(SysConstant.ROOT_DIR_ID);
     fileInfo.setFilePath(rootDirectory);
     fileInfo.setFileName(fileName);
-    fileInfo.setIsFolder(1);
+    fileInfo.setIsFolder(true);
     fileInfo.setFileSize(0L);
     fileService.updateById(fileInfo);
   }
