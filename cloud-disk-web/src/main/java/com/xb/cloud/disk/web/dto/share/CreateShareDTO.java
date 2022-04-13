@@ -17,4 +17,6 @@ public class CreateShareDTO {
 
   /** 过期时间 */
   private Long expiredTime;
+
+  private String extractCode;
 }

@@ -11,6 +11,9 @@ import com.xb.cloud.disk.core.mapper.ShareMapper;
 import com.xb.cloud.disk.core.service.FileService;
 import com.xb.cloud.disk.core.service.ShareFileService;
 import com.xb.cloud.disk.core.service.ShareService;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 /**
  * @author xiabiao
@@ -37,7 +41,7 @@ public class ShareServiceImpl extends ServiceImpl<ShareMapper, Share> implements
 
   @Transactional(rollbackFor = Exception.class)
   @Override
-  public long share(List<Long> fileIds, Date expiredTime) {
+  public long share(List<Long> fileIds, Date expiredTime, String extractCode) {
     List<FileInfo> fileInfos = fileService.listByIds(fileIds);
     if (fileInfos.size() != fileIds.size()) {
       logger.error("分享的文件中有部分文件找不到");
@@ -53,7 +57,7 @@ public class ShareServiceImpl extends ServiceImpl<ShareMapper, Share> implements
     // save data
     Share share = new Share();
     share.setShareUser(currUsername);
-    share.setExtractCode(generateExtractCode());
+    share.setExtractCode(extractCode);
     share.setExpiredTime(expiredTime);
     save(share);
 
@@ -73,7 +77,11 @@ public class ShareServiceImpl extends ServiceImpl<ShareMapper, Share> implements
   }
 
   @Override
-  public List<FileInfo> listShareFiles(long shareId) {
+  public List<FileInfo> listShareFiles(long shareId, String extractCode) {
+    Share share = getById(shareId);
+
+    checkShare(extractCode, share);
+
     List<Long> fileIds =
         shareFileService
             .list(new LambdaQueryWrapper<ShareFile>().eq(ShareFile::getShareId, shareId)).stream()
@@ -82,7 +90,84 @@ public class ShareServiceImpl extends ServiceImpl<ShareMapper, Share> implements
     return fileService.listByIds(fileIds);
   }
 
-  private String generateExtractCode() {
-    return String.valueOf(System.currentTimeMillis());
+  @Override
+  public long copy(long fileId, long targetFileId, long shareId, String extractCode) {
+    Share share = getById(shareId);
+
+    checkShare(extractCode, share);
+
+    ShareFile shareFile =
+        shareFileService.getOne(
+            new LambdaQueryWrapper<ShareFile>()
+                .eq(ShareFile::getShareId, shareId)
+                .eq(ShareFile::getFileId, fileId));
+    if (shareFile == null) {
+      logger.error("Share file not found.");
+      throw new RuntimeException("Share file not found.");
+    }
+
+    FileInfo targetFile = fileService.getById(targetFileId);
+    if (targetFile == null) {
+      logger.error("target file not found.");
+      throw new RuntimeException("target file not found.");
+    }
+    if (targetFile.getIsFolder() != 1) {
+      logger.error("target file is not a folder.");
+      throw new RuntimeException("target file is not a folder.");
+    }
+    if (!targetFile.getOwner().equals(tokenManager.load(ThreadToken.get()).getUsername())) {
+      log.error("permission denied.");
+      throw new RuntimeException("permission denied");
+    }
+
+    FileInfo fileInfo = fileService.getById(fileId);
+    fileInfo.setFileId(null);
+    fileInfo.setParentId(targetFileId);
+    fileService.save(fileInfo);
+    return fileInfo.getFileId();
+  }
+
+  private void checkShare(String extractCode, Share share) {
+    if (share == null) {
+      logger.error("share not found");
+      throw new RuntimeException("share not found.");
+    }
+
+    if (share.getExpiredTime().getTime() < System.currentTimeMillis()) {
+      logger.error("share had been expired.");
+      throw new RuntimeException("share had been expired.");
+    }
+
+    if (StringUtils.hasText(share.getExtractCode())
+        && !share.getExtractCode().equals(extractCode)) {
+      logger.error("incorrect extract code.");
+      throw new RuntimeException("incorrect extract code.");
+    }
+  }
+
+  @Override
+  public InputStream download(long shareId, long fileId, String extractCode)
+      throws FileNotFoundException {
+
+    Share share = getById(shareId);
+    checkShare(extractCode, share);
+
+    ShareFile shareFile =
+        shareFileService.getOne(
+            new LambdaQueryWrapper<ShareFile>()
+                .eq(ShareFile::getShareId, shareId)
+                .eq(ShareFile::getFileId, fileId));
+    if (shareFile == null) {
+      logger.error("share file not found.");
+      throw new RuntimeException("share file not found.");
+    }
+
+    FileInfo fileInfo = fileService.getById(fileId);
+    if (fileInfo == null) {
+      logger.error("file not found.");
+      throw new RuntimeException("file not found.");
+    }
+
+    return new FileInputStream(fileInfo.getFilePath());
   }
 }
